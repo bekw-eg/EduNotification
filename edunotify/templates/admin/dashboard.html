@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="card-title">Админ панелі</h1>
+
+<div class="row" style="margin-bottom: 30px;">
+    <div class="col-3">
+        <div class="card" style="text-align: center;">
+            <h3>Хабарландырулар</h3>
+            <p style="font-size: 28px; font-weight: bold; margin: 10px 0;">{{ total_notifications }}</p>
+            <small>Бүгін: {{ today_notifications }}</small>
+        </div>
+    </div>
+    
+    <div class="col-3">
+        <div class="card" style="text-align: center;">
+            <h3>Пайдаланушылар</h3>
+            <p style="font-size: 28px; font-weight: bold; margin: 10px 0;">{{ total_users }}</p>
+            <small>Админдер: {{ admin_count }}</small>
+        </div>
+    </div>
+    
+    <div class="col-3">
+        <div class="card" style="text-align: center;">
+            <h3>Группалар</h3>
+            <p style="font-size: 28px; font-weight: bold; margin: 10px 0;">{{ total_groups }}</p>
+        </div>
+    </div>
+    
+    <div class="col-3">
+        <div class="card" style="text-align: center;">
+            <h3>Белсенділік</h3>
+            <p style="font-size: 28px; font-weight: bold; margin: 10px 0;">{{ recent_activity }}</p>
+            <small>Соңғы 7 күн</small>
+        </div>
+    </div>
+</div>
+
+<div class="row" style="margin-bottom: 30px;">
+    <div class="col-6">
+        <div class="card">
+            <h3 class="card-title">Жылдам әрекеттер</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <a href="{% url 'create_notification' %}" class="btn btn-primary" style="text-align: center;">
+                    📢 Жаңа хабарландыру
+                </a>
+                <a href="{% url 'manage_groups' %}" class="btn btn-success" style="text-align: center;">
+                    👥 Группа қосу
+                </a>
+                <a href="{% url 'user_management' %}" class="btn btn-warning" style="text-align: center;">
+                    👤 Пайдаланушылар
+                </a>
+                <a href="/admin/" class="btn btn-secondary" style="text-align: center;">
+                    ⚙️ Django Admin
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-6">
+        <div class="card">
+            <h3 class="card-title">Соңғы хабарландырулар</h3>
+            
+            {% if recent_notifications %}
+                {% for notification in recent_notifications %}
+                    <div style="padding: 10px; border-bottom: 1px solid #eee; margin-bottom: 8px;">
+                        <div style="font-weight: bold; font-size: 14px;">
+                            <a href="{% url 'notification_detail' notification.id %}" style="color: #0066cc; text-decoration: none;">
+                                {{ notification.title }}
+                            </a>
+                        </div>
+                        <div style="font-size: 12px; color: #666;">
+                            {{ notification.created_at|date:"d.m.Y H:i" }} | 
+                            <span class="{% if notification.notification_type == 'general' %}badge-general{% else %}badge-group{% endif %}" 
+                                  style="padding: 1px 6px; border-radius: 10px; font-size: 10px;">
+                                {{ notification.get_notification_type_display }}
+                            </span>
+                            {% if notification.group %}
+                                | {{ notification.group.name }}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+                <div style="text-align: center; margin-top: 10px;">
+                    <a href="{% url 'notifications' %}" class="btn btn-sm btn-secondary">Барлығын көру</a>
+                </div>
+            {% else %}
+                <p style="text-align: center; color: #666; padding: 20px 0;">Әлі хабарландыру жоқ</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-6">
+        <div class="card">
+            <h3 class="card-title">Соңғы тіркелген пайдаланушылар</h3>
+            
+            {% if recent_users %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Пайдаланушы</th>
+                            <th>Роль</th>
+                            <th>Группа</th>
+                            <th>Күні</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in recent_users %}
+                            <tr>
+                                <td>
+                                    <a href="#" style="color: #0066cc; text-decoration: none;">
+                                        {{ user.username }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="{% if user.role == 'admin' %}user-role admin{% else %}user-role user{% endif %}" 
+                                          style="font-size: 11px; padding: 2px 8px;">
+                                        {{ user.get_role_display }}
+                                    </span>
+                                </td>
+                                <td>{% if user.group %}{{ user.group.name }}{% else %}-{% endif %}</td>
+                                <td>{{ user.date_joined|date:"d.m.Y" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div style="text-align: center;">
+                    <a href="{% url 'user_management' %}" class="btn btn-sm btn-secondary">Барлық пайдаланушылар</a>
+                </div>
+            {% else %}
+                <p style="text-align: center; color: #666;">Әлі пайдаланушылар жоқ</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-6">
+        <div class="card">
+            <h3 class="card-title">Статистикалық ақпарат</h3>
+            <div style="padding: 15px;">
+                <div style="margin-bottom: 15px;">
+                    <h4>Хабарландырулардың таралуы</h4>
+                    <div style="background-color: #f8f9fa; padding: 10px; border-radius: 5px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Жалпы хабарландырулар:</span>
+                            <strong>{{ general_count|default:"0" }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Группалық хабарландырулар:</span>
+                            <strong>{{ group_count|default:"0" }}</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4>Жүйе күйі</h4>
+                    <div style="background-color: #f8f9fa; padding: 10px; border-radius: 5px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                            <div style="width: 10px; height: 10px; background-color: #28a745; border-radius: 50%; margin-right: 10px;"></div>
+                            <span>Жүйе қалыпты жұмыс істеуде</span>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <div style="width: 10px; height: 10px; background-color: #28a745; border-radius: 50%; margin-right: 10px;"></div>
+                            <span>База қосылым белсенді</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

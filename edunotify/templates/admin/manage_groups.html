@@ -1,0 +1,243 @@
+<!-- templates/admin/manage_groups.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1>Группаларды басқару</h1>
+    
+    <!-- Сообщения -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Жаңа группа қосу формасы -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Жаңа группа қосу</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{% url 'manage_groups' %}">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-4">
+                        <input type="text" name="name" class="form-control" placeholder="Группа аты" required>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" name="description" class="form-control" placeholder="Сипаттама">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary">Қосу</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Группалар тізімі -->
+    <div class="card">
+        <div class="card-header">
+            <h5>Группалар</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Группа аты</th>
+                            <th>Сипаттама</th>
+                            <th>Мүшелер саны</th>
+                            <th>Хабарламалар</th>
+                            <th>Құрылған күні</th>
+                            <th>Әрекеттер</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in groups %}
+                        <tr>
+                            <td>{{ group.id }}</td>
+                            <td><strong>{{ group.name }}</strong></td>
+                            <td>{{ group.description|truncatechars:50|default:"-" }}</td>
+                            <td><span class="badge bg-info">{{ group.user_count|default:0 }}</span></td>
+                            <td><span class="badge bg-secondary">{{ group.notification_count|default:0 }}</span></td>
+                            <td>{{ group.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                <!-- 1-нұсқа: Түзету формасы -->
+                                <form method="POST" action="{% url 'manage_groups' %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="group_id" value="{{ group.id }}">
+                                    <input type="hidden" name="name" value="{{ group.name }}">
+                                    <input type="hidden" name="description" value="{{ group.description|default:'' }}">
+                                    <button type="submit" class="btn btn-sm btn-warning me-1">
+                                        Түзету
+                                    </button>
+                                </form>
+                                
+                                <!-- 2-нұсқа: Жою формасы -->
+                                <form method="POST" action="{% url 'delete_group' group.id %}" style="display: inline;" 
+                                      onsubmit="return confirm('{{ group.name }} группасын жойғыңыз келе ме?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        Жою
+                                    </button>
+                                </form>
+                                
+                                <!-- Немесе 3-нұсқа: JavaScript арқылы -->
+                                <!--
+                                <button type="button" class="btn btn-sm btn-warning me-1" 
+                                        onclick="showEditModal('{{ group.id }}', '{{ group.name|escapejs }}', '{{ group.description|escapejs }}')">
+                                    Түзету
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" 
+                                        onclick="showDeleteModal('{{ group.id }}', '{{ group.name|escapejs }}')">
+                                    Жою
+                                </button>
+                                -->
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">Группалар жоқ</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модал терезелер (JavaScript үшін) -->
+<div class="modal fade" id="editGroupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'manage_groups' %}" id="editForm">
+                {% csrf_token %}
+                <input type="hidden" name="group_id" id="editGroupId">
+                <div class="modal-header">
+                    <h5 class="modal-title">Группаны түзету</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Группа аты</label>
+                        <input type="text" name="name" id="editGroupName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Сипаттама</label>
+                        <textarea name="description" id="editGroupDescription" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Бас тарту</button>
+                    <button type="submit" class="btn btn-primary">Сақтау</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteGroupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" id="deleteForm">
+                {% csrf_token %}
+                <input type="hidden" name="group_id" id="deleteGroupId">
+                <div class="modal-header">
+                    <h5 class="modal-title">Группаны жою</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Сіз шынымен "<strong id="deleteGroupName"></strong>" группасын жойғыңыз келе ме?</p>
+                    <p class="text-danger"><small>Бұл әрекетті кері қайтару мүмкін емес!</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Бас тарту</button>
+                    <button type="submit" class="btn btn-danger">Жою</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Bootstrap Modal үшін
+if (typeof bootstrap === 'undefined' && typeof $ !== 'undefined') {
+    // jQuery арқылы
+    function showEditModal(groupId, name, description) {
+        $('#editGroupId').val(groupId);
+        $('#editGroupName').val(name);
+        $('#editGroupDescription').val(description || '');
+        $('#editGroupModal').modal('show');
+    }
+    
+    function showDeleteModal(groupId, name) {
+        $('#deleteGroupId').val(groupId);
+        $('#deleteGroupName').text(name);
+        $('#deleteForm').attr('action', "{% url 'delete_group' 0 %}".replace('0', groupId));
+        $('#deleteGroupModal').modal('show');
+    }
+} else if (typeof bootstrap !== 'undefined') {
+    // Bootstrap 5 арқылы
+    function showEditModal(groupId, name, description) {
+        document.getElementById('editGroupId').value = groupId;
+        document.getElementById('editGroupName').value = name;
+        document.getElementById('editGroupDescription').value = description || '';
+        
+        var modal = new bootstrap.Modal(document.getElementById('editGroupModal'));
+        modal.show();
+    }
+    
+    function showDeleteModal(groupId, name) {
+        document.getElementById('deleteGroupId').value = groupId;
+        document.getElementById('deleteGroupName').textContent = name;
+        document.getElementById('deleteForm').action = "{% url 'delete_group' 0 %}".replace('0', groupId);
+        
+        var modal = new bootstrap.Modal(document.getElementById('deleteGroupModal'));
+        modal.show();
+    }
+} else {
+    // Ешнәрсе жоқ болса
+    function showEditModal(groupId, name, description) {
+        if (confirm('Түзету үшін жаңа бетке өту керек. Жалғастырасыз ба?')) {
+            window.location.href = "{% url 'edit_group' 0 %}".replace('0', groupId);
+        }
+    }
+    
+    function showDeleteModal(groupId, name) {
+        if (confirm(name + ' группасын жойғыңыз келе ме?')) {
+            window.location.href = "{% url 'delete_group' 0 %}".replace('0', groupId);
+        }
+    }
+}
+
+// Ескі функцияларды сақтау (compatibility)
+function editGroup(groupId) {
+    // Қарапайым түрде - тікелей форманы пайдалану
+    document.querySelector('input[name="group_id"]').value = groupId;
+    showEditModal(groupId, '', '');
+}
+
+function deleteGroup(groupId, groupName) {
+    showDeleteModal(groupId, groupName);
+}
+</script>
+
+<!-- Егер JavaScript сөндіірілген болса -->
+<noscript>
+    <style>
+        .table td:last-child form {
+            display: inline-block;
+            margin-right: 5px;
+        }
+    </style>
+</noscript>
+{% endblock %}

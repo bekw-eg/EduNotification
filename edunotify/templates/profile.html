@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 30px auto;">
+    <div class="card">
+        <h2 class="card-title">Профиль</h2>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="row" style="margin-bottom: 30px;">
+            <div class="col-6">
+                <h3>Жеке ақпарат</h3>
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px;">
+                    <p><strong>Пайдаланушы аты:</strong> {{ user.username }}</p>
+                    <p><strong>Электронды пошта:</strong> {{ user.email }}</p>
+                    <p><strong>Аты:</strong> {{ user.first_name|default:"Көрсетілмеген" }}</p>
+                    <p><strong>Тегі:</strong> {{ user.last_name|default:"Көрсетілмеген" }}</p>
+                </div>
+            </div>
+            
+            <div class="col-6">
+                <h3>Жүйе ақпараты</h3>
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px;">
+                    <p><strong>Рөл:</strong> 
+                        <span class="user-role {% if user.role == 'admin' %}admin{% else %}user{% endif %}" style="margin-left: 10px;">
+                            {% if user.role == 'admin' %}Админ{% else %}Пайдаланушы{% endif %}
+                        </span>
+                    </p>
+                    <p><strong>Группа:</strong> {% if user.group %}{{ user.group.name }}{% else %}Тағайындалмаған{% endif %}</p>
+                    <p><strong>Тіркелген уақыты:</strong> {{ user.date_joined|date:"d.m.Y H:i" }}</p>
+                    <p><strong>Соңғы кіру:</strong> {{ user.last_login|date:"d.m.Y H:i"|default:"Әлі кірмеген" }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <hr style="margin: 30px 0;">
+        
+        <h3>Профильді жаңарту</h3>
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-6">
+                    <div class="form-group">
+                        <label class="form-label">Аты</label>
+                        <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}">
+                    </div>
+                </div>
+                
+                <div class="col-6">
+                    <div class="form-group">
+                        <label class="form-label">Тегі</label>
+                        <input type="text" name="last_name" class="form-control" value="{{ user.last_name }}">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Группаны өзгерту</label>
+                <select name="group" class="form-control">
+                    <option value="">Группа таңдаңыз</option>
+                    {% for group in groups %}
+                        <option value="{{ group.id }}" {% if user.group.id == group.id %}selected{% endif %}>
+                            {{ group.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Өзгерістерді сақтау</button>
+                <a href="{% url 'password_reset' %}" class="btn btn-secondary">Парольді өзгерту</a>
+                <a href="{% url 'home' %}" class="btn btn-secondary">Артқа</a>
+            </div>
+        </form>
+    </div>
+    
+    {% if user.role == 'admin' %}
+    <div class="card" style="margin-top: 30px;">
+        <h3 class="card-title">Админ құралдары</h3>
+        <div class="row">
+            <div class="col-4">
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;">
+                    Админ панелі
+                </a>
+            </div>
+            <div class="col-4">
+                <a href="{% url 'manage_groups' %}" class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;">
+                    Группаларды басқару
+                </a>
+            </div>
+            <div class="col-4">
+                <a href="{% url 'user_management' %}" class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;">
+                    Пайдаланушыларды басқару
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

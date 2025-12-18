@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Хабарландыруды архивке қою - Edunotify{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-warning">
+                    <h4 class="mb-0">Хабарландыруды архивке қою</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Хабарландыруды архивке қойғаннан кейін оны тек сіз көре аласыз.
+                    </div>
+                    
+                    <p>Сіз мына хабарландыруды архивке қойғыңыз келе ме?</p>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ notification.title }}</h5>
+                            <p class="card-text">{{ notification.content|truncatewords:30 }}</p>
+                            <p class="card-text text-muted">
+                                <small>
+                                    Жарияланған: {{ notification.created_at|date:"d.m.Y H:i" }}<br>
+                                    Автор: {{ notification.created_by.get_full_name|default:notification.created_by.username }}
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Архивке қою себебі (міндетті емес):</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="3" 
+                                      placeholder="Неге архивке қойып жатқаныңызды жазыңыз..."></textarea>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'notification_detail' notification.id %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Болдырмау
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-archive"></i> Иә, архивке қою
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

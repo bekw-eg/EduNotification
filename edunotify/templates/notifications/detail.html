@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+        <div>
+            <h2 class="card-title">
+                {{ notification.title }}
+                {% if notification.is_important %}
+                    <span class="badge badge-danger" style="background-color: #dc3545; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 10px;">
+                        🚨 Маңызды
+                    </span>
+                {% endif %}
+                {% if notification.is_archived %}
+                    <span class="badge badge-secondary" style="background-color: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 10px;">
+                        📁 Архивтелген
+                    </span>
+                {% endif %}
+            </h2>
+            <div class="notification-meta">
+                <span><strong>Күні:</strong> {{ notification.created_at|date:"d.m.Y H:i" }}</span>
+                <span class="notification-badge {% if notification.notification_type == 'general' %}badge-general{% else %}badge-group{% endif %}" 
+                      style="margin: 0 10px;">
+                    {{ notification.get_notification_type_display }}
+                </span>
+                {% if notification.group %}
+                    <span><strong>Группа:</strong> {{ notification.group.name }}</span>
+                {% endif %}
+                <span><strong>Құрушы:</strong> {{ notification.created_by.username }}</span>
+                {% if notification.is_archived %}
+                    <span><strong>Архивтелген:</strong> {{ notification.archive_date|date:"d.m.Y H:i" }}</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 10px;">
+            {% if user.role == 'admin' or user == notification.created_by %}
+                {% if notification.is_active %}
+                    <a href="{% url 'edit_notification' notification.id %}" class="btn btn-secondary">Түзету</a>
+                    <form method="POST" action="{% url 'archive_notification' notification.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning" 
+                                onclick="return confirm('Хабарландыруды архивке ауыстыруға сенімдісіз бе?')">
+                            📁 Архивке
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="POST" action="{% url 'restore_notification' notification.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">
+                            ↩️ Қалпына келтіру
+                        </button>
+                    </form>
+                {% endif %}
+            {% endif %}
+            <a href="{% url 'notifications' %}" class="btn btn-secondary">Артқа</a>
+        </div>
+    </div>
+    
+    {% if notification.has_image %}
+    <div style="margin-bottom: 30px; text-align: center;">
+        <img src="{{ notification.image.url }}" alt="{{ notification.title }}" 
+             class="img-fluid" style="max-width: 100%; max-height: 500px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <p class="text-muted mt-2" style="font-size: 14px;">Хабарландыру суреті</p>
+    </div>
+    {% endif %}
+    
+    <div style="background-color: #f8f9fa; padding: 30px; border-radius: 8px; margin-bottom: 30px;">
+        <div style="font-size: 16px; line-height: 1.8; color: #333;">
+            {{ notification.content|linebreaks }}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-6">
+            <div class="card" style="background-color: #f8f9fa;">
+                <h4 style="color: #0066cc; margin-bottom: 15px;">Хабарландыру туралы ақпарат</h4>
+                <div style="line-height: 2;">
+                    <p><strong>Статус:</strong> 
+                        {% if notification.is_active %}
+                            <span style="color: #28a745;">● Белсенді</span>
+                        {% elif notification.is_archived %}
+                            <span style="color: #6c757d;">● Архивтелген</span>
+                        {% else %}
+                            <span style="color: #dc3545;">● Жойылған</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Түрі:</strong> {{ notification.get_notification_type_display }}</p>
+                    <p><strong>Құрылған уақыты:</strong> {{ notification.created_at|date:"d.m.Y H:i" }}</p>
+                    <p><strong>Соңғы өзгертілген:</strong> {{ notification.updated_at|date:"d.m.Y H:i"|default:"Өзгертілмеген" }}</p>
+                    <p><strong>Құрушы:</strong> {{ notification.created_by.get_full_name|default:notification.created_by.username }}</p>
+                    {% if notification.group %}
+                        <p><strong>Группа:</strong> {{ notification.group.name }}</p>
+                    {% endif %}
+                    {% if notification.is_important %}
+                        <p><strong>Маңыздылығы:</strong> Иә (барлық пайдаланушыларға ескерту)</p>
+                    {% endif %}
+                    {% if notification.has_image %}
+                        <p><strong>Сурет бар:</strong> Иә</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-6">
+            <div class="card" style="background-color: #f8f9fa;">
+                <h4 style="color: #0066cc; margin-bottom: 15px;">Әрекеттер</h4>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <a href="{% url 'notifications' %}" class="btn btn-secondary">
+                        Барлық хабарландыруларға оралу
+                    </a>
+                    
+                    {% if user.role == 'admin' or user == notification.created_by %}
+                        {% if notification.is_active %}
+                            <a href="{% url 'edit_notification' notification.id %}" class="btn btn-primary">
+                                ✏️ Хабарландыруды түзету
+                            </a>
+                        {% endif %}
+                        
+                        {% if notification.is_active %}
+                            <form method="POST" action="{% url 'archive_notification' notification.id %}" 
+                                  onsubmit="return confirmArchive()" style="display: block;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning" style="width: 100%;">
+                                    📁 Архивке ауыстыру
+                                </button>
+                            </form>
+                        {% else %}
+                            <form method="POST" action="{% url 'restore_notification' notification.id %}" 
+                                  onsubmit="return confirm('Хабарландыруды қалпына келтіруге сенімдісіз бе?')" 
+                                  style="display: block;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success" style="width: 100%;">
+                                    ↩️ Архивтен қалпына келтіру
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if user.role == 'admin' %}
+                        <form method="POST" action="{% url 'delete_notification' notification.id %}" 
+                              onsubmit="return confirm('Хабарландыруды толық жоюға сенімдісіз бе?')" 
+                              style="display: block;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger" style="width: 100%;">
+                                🗑️ Толық жою
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmArchive() {
+    const reason = prompt('Архивтеу себебін енгізіңіз (міндетті емес):');
+    if (reason !== null) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{% url 'archive_notification' notification.id %}";
+        
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = 'csrfmiddlewaretoken';
+        csrf.value = '{{ csrf_token }}';
+        form.appendChild(csrf);
+        
+        const reasonInput = document.createElement('input');
+        reasonInput.type = 'hidden';
+        reasonInput.name = 'reason';
+        reasonInput.value = reason;
+        form.appendChild(reasonInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+        return false;
+    }
+    return false;
+}
+</script>
+{% endblock %}

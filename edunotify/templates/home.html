@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="hero-section" style="text-align: center; padding: 40px 0; margin-bottom: 40px;">
+    <h1 style="font-size: 36px; margin-bottom: 15px; color: #0066cc;">EduNotify қош келдіңіз!</h1>
+    <p style="font-size: 18px; max-width: 700px; margin: 0 auto 30px; color: #555;">
+        Колледж немесе университет ішіндегі хабарландырулар жүйесі. Жалпы хабарландыруларды және группаларға арналған хабарландыруларды алыңыз.
+    </p>
+    
+    {% if not user.is_authenticated %}
+        <div style="margin-top: 30px;">
+            <a href="{% url 'register' %}" class="btn btn-primary" style="margin-right: 10px; padding: 12px 30px;">Тіркелу</a>
+            <a href="{% url 'login' %}" class="btn btn-secondary" style="padding: 12px 30px;">Кіру</a>
+        </div>
+    {% endif %}
+</div>
+
+{% if user.is_authenticated %}
+<div class="dashboard-section">
+    <div class="card">
+        <h2 class="card-title">Соңғы хабарландырулар</h2>
+        
+        {% if notifications %}
+            {% for notification in notifications %}
+                <div class="notification-item">
+                    <div class="notification-title">
+                        <a href="{% url 'notification_detail' notification.id %}" style="color: inherit; text-decoration: none;">
+                            {{ notification.title }}
+                        </a>
+                    </div>
+                    <div class="notification-meta">
+                        <span>{{ notification.created_at|date:"d.m.Y H:i" }}</span>
+                        <span class="notification-badge {% if notification.notification_type == 'general' %}badge-general{% else %}badge-group{% endif %}">
+                            {{ notification.get_notification_type_display }}
+                        </span>
+                        {% if notification.group %}
+                            <span>Группа: <strong>{{ notification.group.name }}</strong></span>
+                        {% endif %}
+                        <span>Құрушы: {{ notification.created_by.username }}</span>
+                    </div>
+                    <div class="notification-content">{{ notification.content|truncatewords:50 }}</div>
+                    {% if user.role == 'admin' %}
+                    <div style="margin-top: 10px;">
+                        <a href="{% url 'edit_notification' notification.id %}" class="btn btn-sm btn-secondary">Түзету</a>
+                        <a href="{% url 'notification_detail' notification.id %}" class="btn btn-sm btn-primary">Толығырақ</a>
+                    </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="{% url 'notifications' %}" class="btn btn-secondary">Барлық хабарландыруларды көру</a>
+            </div>
+        {% else %}
+            <p style="text-align: center; color: #666; padding: 20px 0;">
+                Әлі хабарландыру жоқ. Бірінші болып хабарландыру жасаңыз!
+            </p>
+            {% if user.role == 'admin' %}
+            <div style="text-align: center;">
+                <a href="{% url 'create_notification' %}" class="btn btn-primary">Бірінші хабарландыруды жасау</a>
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+    
+    {% if user.role == 'admin' %}
+    <div class="row" style="margin-top: 30px;">
+        <div class="col-6">
+            <div class="card">
+                <h3 class="card-title">Админ әрекеттері</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 10px;">
+                        <a href="{% url 'create_notification' %}" class="btn btn-primary" style="width: 100%; text-align: center;">
+                            Жаңа хабарландыру қосу
+                        </a>
+                    </li>
+                    <li style="margin-bottom: 10px;">
+                        <a href="{% url 'manage_groups' %}" class="btn btn-secondary" style="width: 100%; text-align: center;">
+                            Группаларды басқару
+                        </a>
+                    </li>
+                    <li style="margin-bottom: 10px;">
+                        <a href="{% url 'user_management' %}" class="btn btn-secondary" style="width: 100%; text-align: center;">
+                            Пайдаланушыларды басқару
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary" style="width: 100%; text-align: center;">
+                            Толық админ панель
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="col-6">
+            <div class="card">
+                <h3 class="card-title">Жүйе статистикасы</h3>
+                <div style="font-size: 16px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                        <span>Жалпы хабарландырулар:</span>
+                        <strong>{{ total_notifications }}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                        <span>Жалпы пайдаланушылар:</span>
+                        <strong>{{ total_users }}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                        <span>Жалпы группалар:</span>
+                        <strong>{{ total_groups }}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Админдер саны:</span>
+                        <strong>{{ admin_count|default:"0" }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="features-section" style="margin-top: 50px;">
+    <h2 style="text-align: center; margin-bottom: 30px; color: #0066cc;">Жүйе мүмкіндіктері</h2>
+    
+    <div class="row">
+        <div class="col-3">
+            <div class="card" style="text-align: center; height: 100%;">
+                <h3>Жалпы хабарландырулар</h3>
+                <p>Барлық пайдаланушыларға арналған маңызды хабарландырулар</p>
+            </div>
+        </div>
+        
+        <div class="col-3">
+            <div class="card" style="text-align: center; height: 100%;">
+                <h3>Группалық хабарландырулар</h3>
+                <p>Тек белгілі бір группаға арналған хабарландырулар</p>
+            </div>
+        </div>
+        
+        <div class="col-3">
+            <div class="card" style="text-align: center; height: 100%;">
+                <h3>Қауіпсіздік</h3>
+                <p>Парольді қалпына келтіру және эл. пошта арқылы растау</p>
+            </div>
+        </div>
+        
+        <div class="col-3">
+            <div class="card" style="text-align: center; height: 100%;">
+                <h3>Рөлдік басқару</h3>
+                <p>Админ және пайдаланушы рөлдері бойынша шектеулер</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.is_authenticated and user.role != 'admin' %}
+<div class="user-info-section" style="margin-top: 40px;">
+    <div class="card">
+        <h3 class="card-title">Сіздің ақпаратыңыз</h3>
+        <div class="row">
+            <div class="col-6">
+                <p><strong>Группаңыз:</strong> {% if user.group %}{{ user.group.name }}{% else %}Тағайындалмаған{% endif %}</p>
+                <p><strong>Эл. пошта:</strong> {{ user.email }}</p>
+            </div>
+            <div class="col-6">
+                <p><strong>Тіркелген уақыты:</strong> {{ user.date_joined|date:"d.m.Y" }}</p>
+                <p><strong>Соңғы кіру:</strong> {{ user.last_login|date:"d.m.Y H:i"|default:"Әлі кірмеген" }}</p>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="{% url 'profile' %}" class="btn btn-primary">Профильді өзгерту</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title mb-0">Хабарландыруды түзету</h2>
+        </div>
+        
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- Тақырып -->
+                <div class="mb-3">
+                    <label for="title" class="form-label">Хабарландыру тақырыбы *</label>
+                    <input type="text" name="title" id="title" class="form-control" required 
+                           value="{{ notification.title }}">
+                </div>
+                
+                <!-- Мазмұны -->
+                <div class="mb-3">
+                    <label for="content" class="form-label">Мазмұны *</label>
+                    <textarea name="content" id="content" class="form-control" rows="6" required>{{ notification.content }}</textarea>
+                </div>
+                
+                <!-- Сурет -->
+                <div class="mb-3">
+                    <label for="image" class="form-label">Сурет</label>
+                    
+                    {% if notification.image %}
+                        <div class="mb-2">
+                            <p><strong>Қазіргі сурет:</strong></p>
+                            <img src="{{ notification.image.url }}" 
+                                 alt="{{ notification.title }}" 
+                                 class="img-thumbnail" 
+                                 style="max-height:200px;">
+                        </div>
+                    {% endif %}
+                    
+                    <input type="file" name="image" id="image" class="form-control" accept="image/*">
+                    <div class="form-text">Жаңа сурет жүктеу (бос қалдырсаңыз, ескі сурет сақталады)</div>
+                </div>
+                
+                <!-- Түрі және группа -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="notificationType" class="form-label">Хабарландыру түрі *</label>
+                        <select name="notification_type" id="notificationType" class="form-select" required 
+                                onchange="toggleGroupField()">
+                            <option value="general" {% if notification.notification_type == 'general' %}selected{% endif %}>
+                                Жалпы хабарландыру
+                            </option>
+                            <option value="group" {% if notification.notification_type == 'group' %}selected{% endif %}>
+                                Группаға арналған хабарландыру
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div id="groupField" 
+                             {% if notification.notification_type == 'group' %}
+                                style="display:block;"
+                             {% else %}
+                                style="display:none;"
+                             {% endif %}>
+                            <label for="group" class="form-label">Группа</label>
+                            <select name="group" id="group" class="form-select">
+                                <option value="">Группа таңдаңыз</option>
+                                {% for group in groups %}
+                                    <option value="{{ group.id }}" 
+                                            {% if notification.group.id == group.id %}selected{% endif %}>
+                                        {{ group.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Батырмалар -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Өзгерістерді сақтау
+                    </button>
+                    <a href="{% url 'notification_detail' notification.id %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Артқа
+                    </a>
+                    <a href="{% url 'notification_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-list"></i> Тізімге оралу
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleGroupField() {
+    const type = document.getElementById('notificationType').value;
+    const groupField = document.getElementById('groupField');
+    
+    if (type === 'group') {
+        groupField.style.display = 'block';
+    } else {
+        groupField.style.display = 'none';
+        const groupSelect = document.getElementById('group');
+        if (groupSelect) {
+            groupSelect.value = '';
+        }
+    }
+}
+
+document.querySelector('form').addEventListener('submit', function(e) {
+    const type = document.getElementById('notificationType').value;
+    const group = document.getElementById('group') ? document.getElementById('group').value : '';
+    
+    if (type === 'group' && !group) {
+        e.preventDefault();
+        alert('Группалық хабарландыру үшін группаны таңдаңыз!');
+        document.getElementById('groupField').style.display = 'block';
+        return false;
+    }
+    
+    const fileInput = document.getElementById('image');
+    if (fileInput.files.length > 0) {
+        const fileSize = fileInput.files[0].size / 1024 / 1024;
+        if (fileSize > 50) {
+            e.preventDefault();
+            alert('Сурет өлшемі 50MB-тан аспауы керек!');
+            return false;
+        }
+    }
+    
+    return true;
+});
+</script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+{% endblock %}

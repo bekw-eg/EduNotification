@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 50px auto;">
+    <div class="card">
+        <h2 class="card-title">Кіру</h2>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label class="form-label">Пайдаланушы аты</label>
+                <input type="text" name="username" class="form-control" required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Пароль</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Кіру</button>
+            </div>
+            
+            <div style="text-align: center; margin-top: 15px;">
+                <p>Аккаунтыңыз жоқ па? <a href="{% url 'register' %}" style="color: #0066cc;">Тіркелу</a></p>
+                <p><a href="{% url 'password_reset' %}" style="color: #0066cc;">Парольді ұмыттыңыз ба?</a></p>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

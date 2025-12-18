@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">Жаңа хабарландыру қосу</h2>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <form method="POST" enctype="multipart/form-data" id="notificationForm">
+        {% csrf_token %}
+        
+        <!-- Форма өрістерін қолмен жазу орнына Django формасын пайдалану -->
+        {{ form.non_field_errors }}
+        
+        <div class="form-group">
+            <label class="form-label">Хабарландыру тақырыбы *</label>
+            {{ form.title }}
+            {{ form.title.errors }}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Мазмұны *</label>
+            {{ form.content }}
+            {{ form.content.errors }}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Сурет қосу (міндетті емес)</label>
+            {{ form.image }}
+            <span class="form-text">Тек JPG, PNG, GIF, WebP форматтары. Макс. өлшемі: 5MB</span>
+            
+            <div id="imagePreview" class="mt-3" style="display: none;">
+                <img id="preview" class="img-thumbnail" style="max-width: 300px; max-height: 200px;">
+                <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removeImage()">
+                    Суретті жою
+                </button>
+            </div>
+            {{ form.image.errors }}
+        </div>
+
+        <div class="form-group">
+            <div class="form-check">
+                {{ form.is_important }}
+                <label class="form-check-label" for="{{ form.is_important.id_for_label }}">
+                    🚨 Маңызды хабарландыру (барлық пайдаланушыларға ескерту болады)
+                </label>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-6">
+                <div class="form-group">
+                    <label class="form-label">Хабарландыру түрі *</label>
+                    {{ form.notification_type }}
+                    {{ form.notification_type.errors }}
+                </div>
+            </div>
+            
+            <div class="col-6">
+                <div class="form-group" id="groupField" style="display: none;">
+                    <label class="form-label">Группа *</label>
+                    {{ form.group }}
+                    {{ form.group.errors }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-send"></i> Хабарландыруды жариялау
+            </button>
+            <a href="{% url 'notifications' %}" class="btn btn-secondary">Артқа</a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Хабарландыру түріне қарай группа өрісін көрсету/жасыру
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationType = document.getElementById('id_notification_type');
+    const groupField = document.getElementById('groupField');
+    
+    function toggleGroupField() {
+        if (notificationType.value === 'group') {
+            groupField.style.display = 'block';
+        } else {
+            groupField.style.display = 'none';
+        }
+    }
+    
+    // Бастапқы күй
+    toggleGroupField();
+    
+    // Өзгерістерді тыңдау
+    if (notificationType) {
+        notificationType.addEventListener('change', toggleGroupField);
+    }
+    
+    // Суретті алдын ала қарау
+    const imageInput = document.getElementById('id_image');
+    if (imageInput) {
+        imageInput.addEventListener('change', previewImage);
+    }
+});
+
+function previewImage(event) {
+    const input = event.target;
+    const preview = document.getElementById('preview');
+    const previewContainer = document.getElementById('imagePreview');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            previewContainer.style.display = 'block';
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removeImage() {
+    const imageInput = document.getElementById('id_image');
+    const previewContainer = document.getElementById('imagePreview');
+    
+    if (imageInput) {
+        imageInput.value = '';
+        previewContainer.style.display = 'none';
+    }
+}
+
+// Форманы жіберу алдында тексеру
+document.getElementById('notificationForm').addEventListener('submit', function(e) {
+    const imageInput = document.getElementById('id_image');
+    
+    // Сурет өлшемін тексеру
+    if (imageInput && imageInput.files.length > 0) {
+        const fileSize = imageInput.files[0].size;
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        
+        if (fileSize > maxSize) {
+            e.preventDefault();
+            alert('Суреттің өлшемі 5MB-тан аспауы керек!');
+            return false;
+        }
+    }
+});
+</script>
+
+<style>
+.form-control {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.img-thumbnail {
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 5px;
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 30px auto;">
+    <div class="card">
+        <h2 class="card-title">Тіркелу</h2>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label class="form-label">Пайдаланушы аты *</label>
+                <input type="text" name="username" class="form-control" required>
+                <span class="form-text">Енгізілген пайдаланушы аты басқалардан өзгеше болуы керек</span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Электронды пошта *</label>
+                <input type="email" name="email" class="form-control" required>
+                <span class="form-text">Парольді қалпына келтіру үшін қажет</span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Пароль *</label>
+                <input type="password" name="password1" class="form-control" required>
+                <span class="form-text">Кемінде 8 таңбадан тұруы керек</span>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Парольді қайталаңыз *</label>
+                <input type="password" name="password2" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Группа (міндетті емес)</label>
+                <select name="group" class="form-control">
+                    <option value="">Группа таңдаңыз</option>
+                    {% for group in groups %}
+                        <option value="{{ group.id }}">{{ group.name }}</option>
+                    {% endfor %}
+                </select>
+                <span class="form-text">Егер группаңыз тізімде жоқ болса, админге хабарласыңыз</span>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Тіркелу</button>
+            </div>
+            
+            <div style="text-align: center; margin-top: 15px;">
+                <p>Аккаунтыңыз бар ма? <a href="{% url 'login' %}" style="color: #0066cc;">Кіру</a></p>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

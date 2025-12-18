@@ -1,0 +1,307 @@
+<!-- templates/admin/manage_users.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1>Пайдаланушыларды басқару</h1>
+    
+    <!-- Статистика -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5>Барлық пайдаланушылар</h5>
+                    <h2>{{ users.count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5>Админдер</h5>
+                    <h2>{{ admin_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5>Қарапайым пайдаланушылар</h5>
+                    <h2>{{ user_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5>Группалар</h5>
+                    <h2>{{ all_groups.count }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Пайдаланушылар тізімі -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Пайдаланушылар тізімі</h5>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                    Жаңа пайдаланушы
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Пайдаланушы аты</th>
+                            <th>Эл. пошта</th>
+                            <th>Ролі</th>
+                            <th>Группа</th>
+                            <th>Тіркелген уақыты</th>
+                            <th>Соңғы кіру</th>
+                            <th>Әрекеттер</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td><strong>{{ user.username }}</strong></td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% if user.role == 'admin' %}
+                                <span class="badge bg-danger">Админ</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Пайдаланушы</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.group %}
+                                {{ user.group.name }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.date_joined|date:"d.m.Y H:i" }}</td>
+                            <td>{{ user.last_login|date:"d.m.Y H:i"|default:"-" }}</td>
+                            <td>
+                                <!-- 45-жол: Түзетілген нұсқа -->
+                                <button type="button" class="btn btn-sm btn-warning me-1" 
+                                        onclick="editUser('{{ user.id }}')">
+                                    Түзету
+                                </button>
+                                
+                                <!-- 50-жол: Түзетілген нұсқа -->
+                                {% if user != request.user %}
+                                <button type="button" class="btn btn-sm btn-danger" 
+                                        onclick="deleteUser('{{ user.id }}', '{{ user.username|escapejs }}')">
+                                    Жою
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">Пайдаланушылар жоқ</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модал терезелер -->
+<!-- Жаңа пайдаланушы қосу модалы -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'add_user' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Жаңа пайдаланушы</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Форма өрістері -->
+                    <div class="mb-3">
+                        <label>Логин</label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Email</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Құпия сөз</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Ролі</label>
+                        <select name="role" class="form-control">
+                            <option value="user">Пайдаланушы</option>
+                            <option value="admin">Админ</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Группа</label>
+                        <select name="group" class="form-control">
+                            <option value="">Группа таңдаңыз</option>
+                            {% for group in all_groups %}
+                            <option value="{{ group.id }}">{{ group.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Бас тарту</button>
+                    <button type="submit" class="btn btn-primary">Сақтау</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Пайдаланушыны түзету модалы -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'edit_user' 0 %}" id="editUserForm">
+                {% csrf_token %}
+                <input type="hidden" name="user_id" id="editUserId">
+                <div class="modal-header">
+                    <h5 class="modal-title">Пайдаланушыны түзету</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Логин</label>
+                        <input type="text" name="username" id="editUsername" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Email</label>
+                        <input type="email" name="email" id="editEmail" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Аты</label>
+                        <input type="text" name="first_name" id="editFirstName" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>Тегі</label>
+                        <input type="text" name="last_name" id="editLastName" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>Құпия сөз (өзгерту қажет болса)</label>
+                        <input type="password" name="password" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>Ролі</label>
+                        <select name="role" id="editRole" class="form-control">
+                            <option value="user">Пайдаланушы</option>
+                            <option value="admin">Админ</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Группа</label>
+                        <select name="group" id="editGroup" class="form-control">
+                            <option value="">Группа таңдаңыз</option>
+                            {% for group in all_groups %}
+                            <option value="{{ group.id }}">{{ group.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Бас тарту</button>
+                    <button type="submit" class="btn btn-primary">Сақтау</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Пайдаланушыны жою модалы -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'delete_user' 0 %}" id="deleteUserForm">
+                {% csrf_token %}
+                <input type="hidden" name="user_id" id="deleteUserId">
+                <div class="modal-header">
+                    <h5 class="modal-title">Пайдаланушыны жою</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Сіз шынымен <strong id="deleteUsername"></strong> пайдаланушысын жойғыңыз келе ме?</p>
+                    <p class="text-danger"><small>Бұл әрекетті кері қайтару мүмкін емес!</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Бас тарту</button>
+                    <button type="submit" class="btn btn-danger">Жою</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Пайдаланушыны түзету функциясы
+function editUser(userId) {
+    // URL мекенжайын өзгерту
+    var form = document.getElementById('editUserForm');
+    form.action = form.action.replace('/0/', '/' + userId + '/');
+    document.getElementById('editUserId').value = userId;
+    
+    // Ajax арқылы пайдаланушы мәліметтерін алу
+    fetch('/api/user/' + userId + '/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('editUsername').value = data.user.username;
+                document.getElementById('editEmail').value = data.user.email;
+                document.getElementById('editFirstName').value = data.user.first_name || '';
+                document.getElementById('editLastName').value = data.user.last_name || '';
+                document.getElementById('editRole').value = data.user.role;
+                document.getElementById('editGroup').value = data.user.group_id || '';
+                
+                // Модалды көрсету
+                var modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+                modal.show();
+            }
+        })
+        .catch(error => {
+            console.error('Қате:', error);
+            alert('Пайдаланушы мәліметтерін алу қатесі');
+        });
+}
+
+// Пайдаланушыны жою функциясы
+function deleteUser(userId, username) {
+    // URL мекенжайын өзгерту
+    var form = document.getElementById('deleteUserForm');
+    form.action = form.action.replace('/0/', '/' + userId + '/');
+    document.getElementById('deleteUserId').value = userId;
+    document.getElementById('deleteUsername').textContent = username;
+    
+    // Модалды көрсету
+    var modal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+    modal.show();
+}
+
+// Модалды жабу кезінде форманы тазалау
+document.addEventListener('DOMContentLoaded', function() {
+    var editModal = document.getElementById('editUserModal');
+    if (editModal) {
+        editModal.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('editUserForm').reset();
+        });
+    }
+});
+</script>
+{% endblock %}

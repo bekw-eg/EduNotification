@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h2 class="card-title">Хабарландырулар</h2>
+        
+        {% if user.role == 'admin' %}
+            <a href="{% url 'create_notification' %}" class="btn btn-primary">
+                Жаңа хабарландыру қосу
+            </a>
+        {% endif %}
+    </div>
+    
+    {% if user.role == 'admin' %}
+    <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+        <button class="btn btn-secondary" onclick="filterNotifications('all')">Барлығы</button>
+        <button class="btn btn-secondary" onclick="filterNotifications('general')">Жалпы</button>
+        <button class="btn btn-secondary" onclick="filterNotifications('group')">Группалық</button>
+        <select id="groupFilter" class="form-control" style="width: 200px; display: inline-block;" 
+                onchange="filterByGroup(this.value)">
+            <option value="">Барлық группалар</option>
+            {% for group in groups %}
+                <option value="{{ group.id }}">{{ group.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+    
+    {% if notifications %}
+        <div id="notificationsList">
+            {% for notification in notifications %}
+                <div class="notification-item" data-type="{{ notification.notification_type }}" 
+                     data-group="{{ notification.group.id|default:'' }}">
+                    <div class="notification-title">
+                        <a href="{% url 'notification_detail' notification.id %}" 
+                           style="color: inherit; text-decoration: none;">
+                            {{ notification.title }}
+                        </a>
+                    </div>
+                    <div class="notification-meta">
+                        <span><strong>Күні:</strong> {{ notification.created_at|date:"d.m.Y H:i" }}</span>
+                        <span class="notification-badge {% if notification.notification_type == 'general' %}badge-general{% else %}badge-group{% endif %}">
+                            {{ notification.get_notification_type_display }}
+                        </span>
+                        {% if notification.group %}
+                            <span><strong>Группа:</strong> {{ notification.group.name }}</span>
+                        {% endif %}
+                        <span><strong>Құрушы:</strong> {{ notification.created_by.username }}</span>
+                    </div>
+                    <div class="notification-content">{{ notification.content|truncatewords:100 }}</div>
+                    
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <a href="{% url 'notification_detail' notification.id %}" class="btn btn-sm btn-primary">
+                            Толығырақ
+                        </a>
+                        {% if user.role == 'admin' or user == notification.created_by %}
+                            <a href="{% url 'edit_notification' notification.id %}" class="btn btn-sm btn-secondary">
+                                Түзету
+                            </a>
+                        {% endif %}
+                        {% if user.role == 'admin' %}
+                            <form method="POST" action="{% url 'delete_notification' notification.id %}" 
+                                  style="display: inline;"
+                                  onsubmit="return confirm('Хабарландыруды жойғыңыз келетініне сенімдісіз бе?')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger">Жою</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        {% if notifications.has_other_pages %}
+        <nav style="margin-top: 30px; display: flex; justify-content: center;">
+            <ul style="display: flex; list-style: none; padding: 0; gap: 5px;">
+                {% if notifications.has_previous %}
+                    <li><a href="?page=1" class="btn btn-sm btn-secondary">&laquo; Бірінші</a></li>
+                    <li><a href="?page={{ notifications.previous_page_number }}" class="btn btn-sm btn-secondary">Алдыңғы</a></li>
+                {% endif %}
+                
+                {% for num in notifications.paginator.page_range %}
+                    {% if notifications.number == num %}
+                        <li><span class="btn btn-sm btn-primary" style="cursor: default;">{{ num }}</span></li>
+                    {% elif num > notifications.number|add:'-3' and num < notifications.number|add:'3' %}
+                        <li><a href="?page={{ num }}" class="btn btn-sm btn-secondary">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if notifications.has_next %}
+                    <li><a href="?page={{ notifications.next_page_number }}" class="btn btn-sm btn-secondary">Келесі</a></li>
+                    <li><a href="?page={{ notifications.paginator.num_pages }}" class="btn btn-sm btn-secondary">Соңғы &raquo;</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            Әлі хабарландыру жоқ.
+            {% if user.role == 'admin' %}
+                <a href="{% url 'create_notification' %}" class="alert-link">Бірінші хабарландыруды жасау</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function filterNotifications(type) {
+    const notifications = document.querySelectorAll('.notification-item');
+    notifications.forEach(notification => {
+        if (type === 'all') {
+            notification.style.display = '';
+        } else {
+            notification.style.display = notification.dataset.type === type ? '' : 'none';
+        }
+    });
+}
+
+function filterByGroup(groupId) {
+    const notifications = document.querySelectorAll('.notification-item');
+    notifications.forEach(notification => {
+        if (!groupId) {
+            notification.style.display = '';
+        } else {
+            notification.style.display = notification.dataset.group == groupId ? '' : 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

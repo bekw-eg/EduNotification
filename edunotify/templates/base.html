@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduNotify - Колледж/Университет хабарландырулар жүйесі</title>
+    <style>
+        :root {
+            --primary-color: #ffffff;
+            --secondary-color: #000000;
+            --accent-color: #0066cc;
+            --light-gray: #f5f5f5;
+            --border-color: #ddd;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        body.page-transition {
+            animation: pageOut 0.3s ease-out forwards;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--primary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.4s ease-out, visibility 0.4s ease-out;
+        }
+        
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        .loading-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .loading-icon {
+            font-size: 60px;
+            color: var(--accent-color);
+            animation: bounce 1.5s infinite ease-in-out, pulse 2s infinite ease-in-out;
+            transform-origin: center;
+        }
+        
+        .loading-text {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent-color);
+            animation: fadeInOut 2s infinite ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pageOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+        
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-15px) scale(1.05);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% {
+                opacity: 0.5;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .header-content {
+            animation: slideUp 0.6s ease-out 0.2s both;
+        }
+        
+        .user-info {
+            animation: slideUp 0.6s ease-out 0.4s both;
+        }
+        
+        main {
+            animation: slideUp 0.8s ease-out 0.5s both;
+        }
+        
+        footer {
+            animation: slideUp 0.8s ease-out 0.6s both;
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            min-height: 70px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--secondary-color);
+            font-weight: bold;
+            font-size: 24px;
+            transition: transform 0.3s ease;
+        }
+        
+        .logo:hover {
+            transform: scale(1.05);
+        }
+        
+        .logo-icon {
+            color: var(--accent-color);
+            margin-right: 10px;
+            font-size: 28px;
+            transition: transform 0.3s ease;
+        }
+        
+        .logo:hover .logo-icon {
+            transform: rotate(10deg);
+        }
+        
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 0 20px;
+        }
+        
+        .nav-menu a {
+            text-decoration: none;
+            color: var(--secondary-color);
+            font-weight: 500;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 16px;
+            white-space: nowrap;
+        }
+        
+        .nav-menu a:hover {
+            background-color: var(--accent-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,102,204,0.2);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-shrink: 0;
+        }
+        
+        .username {
+            font-weight: 500;
+            font-size: 16px;
+        }
+        
+        .user-role {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+        
+        .user-role:hover {
+            transform: scale(1.1);
+        }
+        
+        .user-role.admin {
+            background-color: var(--danger-color);
+        }
+        
+        .user-role.user {
+            background-color: var(--success-color);
+        }
+
+        main {
+            flex: 1;
+            padding: 25px 0;
+        }
+
+        footer {
+            background-color: var(--light-gray);
+            padding: 20px 0;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+            margin-top: auto;
+        }
+        
+        .footer-content {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+        
+        .btn:focus:not(:active)::after {
+            animation: ripple 1s ease-out;
+        }
+        
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(20, 20);
+                opacity: 0;
+            }
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0052a3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,102,204,0.3);
+        }
+        
+        .btn-secondary {
+            background-color: var(--light-gray);
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #e0e0e0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: var(--secondary-color);
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .card-title {
+            color: var(--accent-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 22px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--accent-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,102,204,0.1);
+            transform: translateY(-1px);
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-text {
+            display: block;
+            margin-top: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border-color: #ffeaa7;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-color: #bee5eb;
+        }
+
+        .notification-item {
+            padding: 20px;
+            border-left: 4px solid var(--accent-color);
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        .notification-item:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .notification-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .notification-meta {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .notification-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+        
+        .notification-item:hover .notification-badge {
+            transform: scale(1.1);
+        }
+        
+        .badge-general {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .badge-group {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .notification-content {
+            line-height: 1.6;
+            color: #444;
+            font-size: 16px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .table th {
+            background-color: #f8f9fa;
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+            font-size: 15px;
+        }
+        
+        .table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: top;
+            font-size: 15px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .table tr:hover td {
+            background-color: #f8f9fa;
+        }
+        
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -15px;
+        }
+        
+        .col {
+            flex: 1;
+            padding: 0 15px;
+        }
+        
+        .col-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+            padding: 0 15px;
+        }
+        
+        .col-4 {
+            flex: 0 0 33.333%;
+            max-width: 33.333%;
+            padding: 0 15px;
+        }
+        
+        .col-3 {
+            flex: 0 0 25%;
+            max-width: 25%;
+            padding: 0 15px;
+        }
+        
+        @media (max-width: 1600px) {
+            .container {
+                max-width: 1400px;
+                padding: 0 20px;
+            }
+            
+            .nav-menu {
+                gap: 15px;
+            }
+            
+            .nav-menu a {
+                padding: 7px 12px;
+                font-size: 15px;
+            }
+        }
+        
+        @media (max-width: 1200px) {
+            .container {
+                max-width: 1140px;
+                padding: 0 15px;
+            }
+            
+            .nav-menu {
+                gap: 12px;
+                margin: 0 15px;
+            }
+            
+            .nav-menu a {
+                padding: 6px 10px;
+                font-size: 14px;
+            }
+            
+            .logo {
+                font-size: 22px;
+            }
+            
+            .logo-icon {
+                font-size: 26px;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .container {
+                max-width: 960px;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px 0;
+            }
+            
+            .nav-menu {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+                margin: 10px 0;
+            }
+            
+            .user-info {
+                order: 2;
+                margin-top: 10px;
+            }
+            
+            .col-6, .col-4, .col-3 {
+                flex: 0 0 100%;
+                max-width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                max-width: 720px;
+                padding: 0 10px;
+            }
+            
+            .nav-menu {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .nav-menu a {
+                padding: 5px 8px;
+                font-size: 13px;
+            }
+            
+            .logo {
+                font-size: 20px;
+            }
+            
+            .logo-icon {
+                font-size: 24px;
+                margin-right: 8px;
+            }
+            
+            .user-info {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+            
+            .username {
+                font-size: 15px;
+            }
+            
+            .user-role {
+                font-size: 11px;
+                padding: 3px 10px;
+            }
+            
+            .loading-icon {
+                font-size: 50px;
+            }
+            
+            .loading-text {
+                font-size: 16px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .container {
+                width: 100%;
+                padding: 0 8px;
+            }
+            
+            .nav-menu {
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+            }
+            
+            .nav-menu a {
+                width: 100%;
+                text-align: center;
+                padding: 8px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .btn {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+            
+            .loading-icon {
+                font-size: 40px;
+            }
+            
+            .loading-text {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-logo">
+            <div class="loading-icon">📢</div>
+            <div class="loading-text">EduNotify</div>
+        </div>
+    </div>
+    
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="{% url 'home' %}" class="logo" id="pageLogo">
+                    <div class="logo-icon">📢</div>
+                    <span>EduNotify</span>
+                </a>
+                
+                <ul class="nav-menu">
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'home' %}">Басты бет</a></li>
+                        <li><a href="{% url 'notifications' %}">Хабарландырулар</a></li>
+
+                        
+                        
+                        {% if user.role == 'admin' %}
+                            <li><a href="{% url 'admin_dashboard' %}">Админ панель</a></li>
+                            <li><a href="{% url 'create_notification' %}">Хабарландыру қосу</a></li>
+                            <li><a href="{% url 'manage_groups' %}">Группалар</a></li>
+                            <li><a href="{% url 'user_management' %}">Пайдаланушылар</a></li>
+                        {% endif %}
+                        
+                        {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'notification_archive' %}">
+                                <i class="fas fa-archive"></i> Архив
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <li><a href="{% url 'profile' %}">Профиль</a></li>
+                        <li><a href="{% url 'logout' %}">Шығу</a></li>
+                    {% else %}
+                        <li><a href="{% url 'login' %}">Кіру</a></li>
+                        <li><a href="{% url 'register' %}">Тіркелу</a></li>
+                    {% endif %}
+                </ul>
+                
+                {% if user.is_authenticated %}
+                    <div class="user-info">
+                        <span class="username">{{ user.username }}</span>
+                        <span class="user-role {% if user.role == 'admin' %}admin{% else %}user{% endif %}">
+                            {% if user.role == 'admin' %}Админ{% else %}Пайдаланушы{% endif %}
+                        </span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+    
+    <main>
+        <div class="container">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <p>EduNotify - Колледж/Университет хабарландырулар жүйесі &copy; {% now "Y" %}</p>
+                <p>Барлық құқықтар қорғалған</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                document.body.style.opacity = '1';
+            }, 800);
+            
+            const internalLinks = document.querySelectorAll('a[href^="/"], a[href^="http://127.0.0.1"], a[href^="{% url"]');
+            
+            internalLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (this.target === '_blank' || this.hasAttribute('download') || 
+                        this.getAttribute('href').startsWith('#')) {
+                        return;
+                    }
+                    
+                    e.preventDefault();
+                    const href = this.getAttribute('href');
+                    
+                    document.body.classList.add('page-transition');
+                    
+
+                    document.getElementById('loadingOverlay').classList.remove('hidden');
+
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 300);
+                });
+            });
+            
+
+            const logo = document.getElementById('pageLogo');
+            setTimeout(() => {
+                logo.style.animation = 'bounce 1s ease-out';
+                setTimeout(() => {
+                    logo.style.animation = '';
+                }, 1000);
+            }, 1000);
+            
+
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    card.style.transform = 'translateY(-5px)';
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'translateY(0)';
+                });
+            });
+            
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const x = e.clientX - e.target.getBoundingClientRect().left;
+                    const y = e.clientY - e.target.getBoundingClientRect().top;
+                    
+                    const ripple = document.createElement('span');
+                    ripple.style.position = 'absolute';
+                    ripple.style.borderRadius = '50%';
+                    ripple.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+                    ripple.style.transform = 'translate(-50%, -50%) scale(0)';
+                    ripple.style.animation = 'ripple 0.6s linear';
+                    ripple.style.left = `${x}px`;
+                    ripple.style.top = `${y}px`;
+                    ripple.style.width = '100px';
+                    ripple.style.height = '100px';
+                    
+                    this.appendChild(ripple);
+                    
+                    setTimeout(() => {
+                        ripple.remove();
+                    }, 600);
+                });
+            });
+            
+
+            const animateOnScroll = () => {
+                const elements = document.querySelectorAll('.card, .notification-item, .table tr');
+                
+                elements.forEach(element => {
+                    const elementTop = element.getBoundingClientRect().top;
+                    const elementVisible = 150;
+                    
+                    if (elementTop < window.innerHeight - elementVisible) {
+                        element.style.opacity = '1';
+                        element.style.transform = 'translateY(0)';
+                    }
+                });
+            };
+            
+
+            document.querySelectorAll('.card, .notification-item, .table tr').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            });
+            
+
+            window.addEventListener('scroll', animateOnScroll);
+            animateOnScroll(); 
+        });
+        
+
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                document.body.classList.remove('page-transition');
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
